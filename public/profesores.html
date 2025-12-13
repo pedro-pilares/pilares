@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Profesores - Pilares</title>
+    <link rel="stylesheet" type="text/css" href="css/forms.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👨‍🏫 Profesores</h1>
+            <p>Directorio completo de profesores del sistema Pilares</p>
+        </div>
+
+        <div id="messages"></div>
+
+        <!--div class="form-section">
+            <div class="form-group">
+                <input 
+                    type="text" 
+                    id="nombreProfesor" 
+                    placeholder="Ingrese el nombre del profesor..."
+                    autocomplete="off"
+                >
+                <button onclick="agregarProfesor()">Agregar Profesor</button>
+            </div>
+        </div-->
+
+        <div class="table-wrapper">
+            <table id="profesoresTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre del Profesor</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="2" class="loading">Cargando datos</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats">
+            <p>Total de profesores: <strong id="totalProfesores">0</strong></p>
+        </div>
+    </div>
+
+    <script>
+        // Cargar profesores al iniciar la página
+        document.addEventListener('DOMContentLoaded', cargarProfesores);
+
+        // Permitir agregar profesor con Enter
+        document.getElementById('nombreProfesor').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') agregarProfesor();
+        });
+
+        async function cargarProfesores() {
+            try {
+                const response = await fetch('/api/profesores');
+                if (!response.ok) throw new Error('Error al cargar los profesores');
+                
+                const profesores = await response.json();
+                const tableBody = document.getElementById('tableBody');
+                
+                if (profesores.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #999; padding: 40px;">No hay profesores registrados</td></tr>';
+                } else {
+                    tableBody.innerHTML = profesores.map(p => `
+                        <tr>
+                            <td class="id-cell">#${p.id}</td>
+                            <td class="nombre-cell">${escapeHtml(p.nombre_profesor)}</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                document.getElementById('totalProfesores').textContent = profesores.length;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('tableBody').innerHTML = `
+                    <tr><td colspan="2"><div class="error">Error al cargar los datos: ${error.message}</div></td></tr>
+                `;
+            }
+        }
+
+        async function agregarProfesor() {
+            const input = document.getElementById('nombreProfesor');
+            const nombre = input.value.trim();
+            
+            if (!nombre) {
+                mostrarMensaje('Por favor, ingrese el nombre del profesor', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/profesores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nombre_profesor: nombre })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al agregar el profesor');
+                }
+
+                const nuevoProfesor = await response.json();
+                mostrarMensaje(`Profesor "${nombre}" agregado correctamente`, 'success');
+                input.value = '';
+                cargarProfesores();
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarMensaje(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function mostrarMensaje(mensaje, tipo) {
+            const messagesDiv = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = tipo;
+            div.textContent = mensaje;
+            messagesDiv.innerHTML = '';
+            messagesDiv.appendChild(div);
+
+            setTimeout(() => {
+                div.remove();
+            }, 4000);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>

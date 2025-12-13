@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Áreas - Pilares</title>
+    <link rel="stylesheet" type="text/css" href="css/forms.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📍 Áreas</h1>
+            <p>Directorio completo de áreas del edificio de Pilares</p>
+        </div>
+
+        <div id="messages"></div>
+
+        <!--div class="form-section">
+            <div class="form-group">
+                <input 
+                    type="text" 
+                    id="nombreArea" 
+                    placeholder="Ingrese el nombre del área..."
+                    autocomplete="off"
+                >
+                <button onclick="agregarArea()">Agregar Área</button>
+            </div>
+        </div-->
+
+        <div class="table-wrapper">
+            <table id="areasTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Areas de PILARES</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="2" class="loading">Cargando datos</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats">
+            <p>Total de áreas: <strong id="totalAreas">0</strong></p>
+        </div>
+    </div>
+
+    <script>
+        // Cargar áreas al iniciar la página
+        document.addEventListener('DOMContentLoaded', cargarAreas);
+
+        // Permitir agregar área con Enter
+        document.getElementById('nombreArea').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') agregarArea();
+        });
+
+        async function cargarAreas() {
+            try {
+                const response = await fetch('/api/areas');
+                if (!response.ok) throw new Error('Error al cargar las áreas');
+                
+                const areas = await response.json();
+                const tableBody = document.getElementById('tableBody');
+                
+                if (areas.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #999; padding: 40px;">No hay áreas registradas</td></tr>';
+                } else {
+                    tableBody.innerHTML = areas.map(p => `
+                        <tr>
+                            <td class="id-cell">#${p.id}</td>
+                            <td class="nombre-cell">${escapeHtml(p.nombre_area)}</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                document.getElementById('totalAreas').textContent = areas.length;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('tableBody').innerHTML = `
+                    <tr><td colspan="2"><div class="error">Error al cargar los datos: ${error.message}</div></td></tr>
+                `;
+            }
+        }
+
+        async function agregarAreas() {
+            const input = document.getElementById('nombreAreas');
+            const nombre = input.value.trim();
+            
+            if (!nombre) {
+                mostrarMensaje('Por favor, ingrese el nombre del área', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/areas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nombre_area: nombre })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al agregar el área');
+                }
+
+                const nuevoArea = await response.json();
+                mostrarMensaje(`Area "${nombre}" agregada correctamente`, 'success');
+                input.value = '';
+                cargarAreas();
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarMensaje(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function mostrarMensaje(mensaje, tipo) {
+            const messagesDiv = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = tipo;
+            div.textContent = mensaje;
+            messagesDiv.innerHTML = '';
+            messagesDiv.appendChild(div);
+
+            setTimeout(() => {
+                div.remove();
+            }, 4000);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>

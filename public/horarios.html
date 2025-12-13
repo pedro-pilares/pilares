@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Horarios - Pilares</title>
+    <link rel="stylesheet" type="text/css" href="css/forms.css">
+</head>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⏱️ Horarios</h1>
+            <p>Directorio completo de horarios del sistema Pilares</p>
+        </div> 
+        <div id="messages"></div>
+        <!--div class="form-section">
+            <div class="form-group">
+                <input 
+                    type="text" 
+                    id="nombreHorario" 
+                    placeholder="Ingrese el nombre del horario..."
+                    autocomplete="off"
+                >
+                <button onclick="agregarHorario()">Agregar Horario</button>
+            </div>
+        </div-->
+
+        <div class="table-wrapper">
+            
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <table>
+        <thead>
+            <tr>
+            <th></th>
+            <th>
+                <span class="day"></span>
+                <span class="long">Lunes</span>
+                <span class="short"></span>
+            </th>
+            <th>
+                <span class="day"></span>
+                <span class="long">Martes</span>
+                <span class="short"></span>
+            </th>
+            <th>
+                <span class="day"></span>
+                <span class="long">Miercoles</span>
+                <span class="short"></span>
+            </th>
+            <th>
+                <span class="day"></span>
+                <span class="long">Jueves</span>
+                <span class="short"></span>
+            </th>
+            <th>
+                <span class="day active"></span>
+                <span class="long">Viernes</span>
+                <span class="short"></span>
+            </th>
+            <th>
+                <span class="day"></span>
+                <span class="long">Sabado</span>
+                <span class="short"></span>
+            </th>
+            </tr>
+        </thead>
+        <tbody id="tableBodyHours">
+            <!-- Las filas de horarios se generarán aquí dinámicamente -->
+        </tbody>
+        </table>
+
+        </div>
+
+
+        <div class="table-wrapper">
+            <table id="horariosTable">
+                <thead>
+                    <tr>    
+                        <th>ID</th>
+                        <th>Horario de PILARES</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="2" class="loading">Cargando datos</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="stats"> 
+            <p>Total de horarios: <strong id="totalHorarios">0</strong></p>
+        </div>
+    </div>    
+    <script>
+        // Cargar horarios al iniciar la página
+        document.addEventListener('DOMContentLoaded', cargarHorarios);
+
+        // Permitir agregar horario con Enter
+        document.getElementById('nombreHorario').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') agregarHorario();
+        });
+
+        async function cargarTabla() {
+            alert('Cargando tabla de horarios...');
+            horaApertura = 8;
+            horaCierre = 20;
+            intervalo = 1; // en horas
+            for (let hora = horaApertura; hora < horaCierre; hora += intervalo) {
+                const fila = document.createElement('tr');
+                const celdaHora = document.createElement('td');
+                celdaHora.textContent = `${hora}:00 - ${hora + intervalo}:00`;
+                fila.appendChild(celdaHora);
+
+                for (let dia = 0; dia < 6; dia++) {
+                    const celdaDia = document.createElement('td');
+                    celdaDia.id = `dia${dia}_hora${hora}`;
+                    celdaDia.textContent = ''; // Aquí puedes agregar la lógica para llenar las celdas según los horarios
+                    fila.appendChild(celdaDia);
+                }
+
+                document.getElementById('tableBodyHours').appendChild(fila);
+            }
+        }
+
+        async function cargarHorarios() {
+            cargarTabla();
+            try {
+                const res = await fetch('/api/horarios');
+                const data = await res.json();
+
+                const tableBody = document.getElementById('tableBody');
+                tableBody.innerHTML = '';
+
+                data.forEach(horario => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${horario.id}</td>
+                        <td>${horario.nombre}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+                document.getElementById('totalHorarios').textContent = (data || []).length;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="2"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+            }
+        }
+
+        async function agregarHorario() {
+            const nombreHorario = document.getElementById('nombreHorario').value.trim();
+            if (!nombreHorario) return;
+
+            try {
+                const res = await fetch('/api/horarios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre: nombreHorario })
+                });
+
+                if (!res.ok) throw new Error('Error al agregar el horario');
+
+                document.getElementById('nombreHorario').value = '';
+                cargarHorarios();
+            } catch (err) {
+                console.error(err);
+                alert(`Error al agregar el horario: ${err.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

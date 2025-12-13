@@ -1,0 +1,28 @@
+{
+  "name": "pilares",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "pilares"
+  ],
+  "homepage": "https://github.com/vaom03/pilares#readme",
+  "bugs": {
+    "url": "https://github.com/vaom03/pilares/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vaom03/pilares.git"
+  },
+  "license": "ISC",
+  "author": "Luis Ramirez, Pedro Ramirez, Victor Ordoñez, Josue Gutierrez",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "sqlite": "^4.2.1",
+    "sqlite3": "^5.1.6"
+  }
+}

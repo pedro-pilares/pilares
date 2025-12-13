@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Disciplinas - Pilares</title>
+    <link rel="stylesheet" type="text/css" href="css/forms.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Disciplinas</h1>
+            <p>Listado de disciplinas registradas en el sistema Pilares</p>
+        </div>
+
+        <div id="messages"></div>
+
+        <!--div class="form-section">
+            <div class="form-group">
+                <input type="text" id="nombreDisciplina" placeholder="Nombre de la disciplina...">
+                <input type="number" id="profesorId" placeholder="Profesor ID" min="1">
+                <input type="number" id="areaId" placeholder="Area ID" min="1">
+                <input type="number" id="estatusId" placeholder="Estatus ID" min="1">
+                <input type="text" id="horario" placeholder="Horario (ej. Lun 9:00-11:00)">
+                <button onclick="agregarDisciplina()">Agregar</button>
+            </div>
+        </div-->
+
+        <div class="table-wrapper">
+            <table id="disciplinasTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Profesor ID</th>
+                        <th>Area ID</th>
+                        <th>Estatus ID</th>
+                        <th>Horario</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="6" class="loading">Cargando datos</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats">
+            <p>Total de disciplinas: <strong id="total">0</strong></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', cargarDisciplinas);
+
+        function mostrarMensaje(mensaje, tipo) {
+            const messagesDiv = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = tipo;
+            div.textContent = mensaje;
+            messagesDiv.innerHTML = '';
+            messagesDiv.appendChild(div);
+            setTimeout(() => div.remove(), 4000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"']/g, function(m) {
+                return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]);
+            });
+        }
+
+        async function actualizarEstatus() {
+            try{
+                const res = await fetch('/api/estatuscount');
+                if (!res.ok) throw new Error('Error al cargar el estatus');
+                const data = await res.json();
+                cantidad_estatus = data[0].cantidad_estatus;
+                
+                //alert(cantidad_estatus);
+                for (let i = 1; i < cantidad_estatus+1; i++) {
+                    await actualizarEstatusIndividual(i);
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+            }
+        }
+
+        async function actualizarEstatusIndividual(id_estatus) {
+            try{
+                const res = await fetch('/api/estatusbyid?id='+id_estatus);
+                if (!res.ok) throw new Error('Error al cargar el estatus');
+                const data = await res.json();
+                //const estatus = document.getElementById('estatus-'+id_estatus);
+                //estatus.innerHTML = data[0].nombre_estatus;
+                var estatuses = document.querySelectorAll("[id='estatus-"+id_estatus+"']");
+                for(var i = 0; i < estatuses.length; i++) {
+                    estatuses[i].innerHTML = data[0].estatus;
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+            }
+        }
+
+        async function actualizarAreas() {
+            try{
+                const res = await fetch('/api/areacount');
+                if (!res.ok) throw new Error('Error al cargar el area');
+                const data = await res.json();
+                cantidad_areas = data[0].cantidad_areas;
+                
+                //alert(cantidad_areas);
+                for (let i = 1; i < cantidad_areas+1; i++) {
+                    await actualizarArea(i);
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+            }
+        }
+
+        async function actualizarArea(id_area) {
+            try{
+                const res = await fetch('/api/areabyid?id='+id_area);
+                if (!res.ok) throw new Error('Error al cargar el area');
+                const data = await res.json();
+                //const area = document.getElementById('area-'+id_area);
+                //area.innerHTML = data[0].nombre_area;
+                var areas = document.querySelectorAll("[id='area-"+id_area+"']");
+                for(var i = 0; i < areas.length; i++) {
+                    areas[i].innerHTML = data[0].nombre_area;
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+            }
+        }
+
+        async function actualizarProfesores() {
+            try{
+                const res = await fetch('/api/profesorcount');
+                if (!res.ok) throw new Error('Error al cargar el profesor');
+                const data = await res.json();
+                cantidad_profesores = data[0].cantidad_profesores;
+                
+                //alert(cantidad_profesores);
+                for (let i = 1; i < cantidad_profesores+1; i++) {
+                    await actualizarProfesor(i);
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+            }
+        }
+
+        async function actualizarProfesor(id_profesor) {
+            try{
+                const res = await fetch('/api/profesorbyid?id='+id_profesor);
+                if (!res.ok) throw new Error('Error al cargar el profesor');
+                const data = await res.json();
+                //const profe = document.getElementById('profe-'+id_profesor);
+                //profe.innerHTML = data[0].nombre_profesor;
+                var profes = document.querySelectorAll("[id='profe-"+id_profesor+"']");
+                for(var i = 0; i < profes.length; i++) {
+                    profes[i].innerHTML = data[0].nombre_profesor;
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+            }
+        }
+
+        async function cargarDisciplinas() {
+            try {
+                const res = await fetch('/api/disciplinas');
+                if (!res.ok) throw new Error('Error al cargar las disciplinas');
+                const data = await res.json();
+                const tbody = document.getElementById('tableBody');
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:40px;">No hay disciplinas registradas</td></tr>';
+                } else {
+                    tbody.innerHTML = data.map(d => `\
+                        <tr>\
+                            <td class="id-cell">#${d.id}</td>\
+                            <td class="nombre-cell">${escapeHtml(d.nombre_disciplina)}</td>\
+                            <td id="profe-${d.profesor_id}">${d.profesor_id}</td>\
+                            <td id="area-${d.area_id}">${d.area_id}</td>\
+                            <td id="estatus-${d.estatus_id}">${d.estatus_id}</td>\
+                            <td>${escapeHtml(d.horario)}</td>\
+                        </tr>\
+                    `).join('');
+                }
+                document.getElementById('total').textContent = (data || []).length;
+
+                actualizarProfesores();
+                actualizarAreas();
+                actualizarEstatus();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+            }
+        }
+
+        async function agregarDisciplina() {
+            const nombre = document.getElementById('nombreDisciplina').value.trim();
+            const profesorId = parseInt(document.getElementById('profesorId').value, 10);
+            const areaId = parseInt(document.getElementById('areaId').value, 10);
+            const estatusId = parseInt(document.getElementById('estatusId').value, 10);
+            const horario = document.getElementById('horario').value.trim();
+
+            if (!nombre || isNaN(profesorId) || isNaN(areaId) || isNaN(estatusId) || !horario) {
+                mostrarMensaje('Todos los campos son requeridos', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/disciplinas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre_disciplina: nombre, profesor_id: profesorId, area_id: areaId, estatus_id: estatusId, horario })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Error al guardar');
+                }
+                const nuevo = await res.json();
+                mostrarMensaje(`Disciplina "${nombre}" agregada (ID ${nuevo.id})`, 'success');
+                document.getElementById('nombreDisciplina').value = '';
+                document.getElementById('profesorId').value = '';
+                document.getElementById('areaId').value = '';
+                document.getElementById('estatusId').value = '';
+                document.getElementById('horario').value = '';
+                cargarDisciplinas();
+            } catch (err) {
+                console.error(err);
+                mostrarMensaje(`Error: ${err.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
