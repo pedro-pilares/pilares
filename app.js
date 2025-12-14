@@ -11,6 +11,16 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'inicio.html'))
 })
 
+//----------------API HORARIOS -----------------------
+// endpoint to list horarios from the DB
+app.get('/api/horarios', async (req, res) => {
+  try {
+    const horarios = await app.locals.db.all('select * from disciplina where horario like "%'+req.query.dia+req.query.hora+'%"')
+    res.json(horarios)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 //----------------API AREAS --------------------------
 
