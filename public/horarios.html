@@ -73,37 +73,13 @@
 
         </div>
 
-
-        <div class="table-wrapper">
-            <table id="horariosTable">
-                <thead>
-                    <tr>    
-                        <th>ID</th>
-                        <th>Horario de PILARES</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr>
-                        <td colspan="2" class="loading">Cargando datos</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="stats"> 
-            <p>Total de horarios: <strong id="totalHorarios">0</strong></p>
-        </div>
     </div>    
     <script>
         // Cargar horarios al iniciar la página
-        document.addEventListener('DOMContentLoaded', cargarHorarios);
-
-        // Permitir agregar horario con Enter
-        document.getElementById('nombreHorario').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') agregarHorario();
-        });
+        document.addEventListener('DOMContentLoaded', cargarTabla);
 
         async function cargarTabla() {
-            alert('Cargando tabla de horarios...');
+            //alert('Cargando tabla de horarios...');
             horaApertura = 8;
             horaCierre = 20;
             intervalo = 1; // en horas
@@ -113,10 +89,13 @@
                 celdaHora.textContent = `${hora}:00 - ${hora + intervalo}:00`;
                 fila.appendChild(celdaHora);
 
+                diaArreglo = ['L', 'M', 'W', 'J', 'V', 'S'];
+
                 for (let dia = 0; dia < 6; dia++) {
                     const celdaDia = document.createElement('td');
-                    celdaDia.id = `dia${dia}_hora${hora}`;
-                    celdaDia.textContent = ''; // Aquí puedes agregar la lógica para llenar las celdas según los horarios
+                    celdaDia.id = `dia${diaArreglo[dia]}_hora${hora+"00"}`;
+                    //celdaDia.textContent = 'pedro'; // Aquí puedes agregar la lógica para llenar las celdas según los horarios
+                    actualizarHorarioIndividual(diaArreglo[dia], hora+"00");
                     fila.appendChild(celdaDia);
                 }
 
@@ -124,51 +103,34 @@
             }
         }
 
-        async function cargarHorarios() {
-            cargarTabla();
-            try {
-                const res = await fetch('/api/horarios');
+
+        async function actualizarHorarioIndividual(dia, hora) {
+            try{
+                let parrafo_disciplinas = '';
+
+                const res = await fetch('/api/horarios?dia='+dia+'&hora='+hora);
+                if (!res.ok) throw new Error('Error al cargar el horario');
                 const data = await res.json();
 
-                const tableBody = document.getElementById('tableBody');
-                tableBody.innerHTML = '';
-
-                data.forEach(horario => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${horario.id}</td>
-                        <td>${horario.nombre}</td>
-                    `;
-                    tableBody.appendChild(row);
+                data.forEach(disciplina => {
+                    parrafo_disciplinas += '<div title "' +
+                     disciplina.horario +
+                      '" class="calendarClass">' +
+                        disciplina.nombre_disciplina +
+                         '</div><br>';
                 });
-
-                document.getElementById('totalHorarios').textContent = (data || []).length;
+                
+                const celda = document.getElementById(`dias${dia}_horas${hora}`);
+                celda.innerHTML = parrafo_disciplinas;
+           
             } catch (err) {
                 console.error(err);
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="2"><div class="error">Error al cargar los datos: ${err.message}</div></td></tr>`;
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6"><div class="error">Error al cargar los datos: ${err.message}</div></td><tr>`;
+
             }
+
         }
 
-        async function agregarHorario() {
-            const nombreHorario = document.getElementById('nombreHorario').value.trim();
-            if (!nombreHorario) return;
-
-            try {
-                const res = await fetch('/api/horarios', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre: nombreHorario })
-                });
-
-                if (!res.ok) throw new Error('Error al agregar el horario');
-
-                document.getElementById('nombreHorario').value = '';
-                cargarHorarios();
-            } catch (err) {
-                console.error(err);
-                alert(`Error al agregar el horario: ${err.message}`);
-            }
-        }
     </script>
 </body>
 </html>
